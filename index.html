@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CSCA Math Tracker</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1d7a5f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CSCA Math">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f6f5f1;--card:#fff;--ink:#1d1d1b;--mute:#6b6a64;--line:#e4e2da;--acc:#1d7a5f;--accbg:#dff1ea;--warn:#b4531a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#141413;--card:#1f1f1d;--ink:#eeede8;--mute:#9a988f;--line:#33322e;--acc:#4cc59d;--accbg:#1c3a30;--warn:#e88a4f}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:24px;margin:0 0 4px}
+.sub{color:var(--mute);font-size:14px;margin-bottom:16px}
+.top{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:10px 0 6px}
+.bar i{display:block;height:100%;background:var(--acc);width:0;transition:width .3s}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.stat{font-size:14px;color:var(--mute)}
+.stat b{color:var(--ink)}
+label.d{font-size:13px;color:var(--mute);display:flex;gap:6px;align-items:center}
+input[type=date],input[type=text]{font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button{font:inherit;font-size:14px;padding:6px 14px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.tabs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.day{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px}
+.day.today{border-color:var(--acc);box-shadow:0 0 0 2px var(--accbg)}
+.day.done{opacity:.65}
+.dh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+.dh h2{font-size:16px;margin:0}
+.dh span{font-size:12px;color:var(--mute);white-space:nowrap}
+.tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:10px;background:var(--accbg);color:var(--acc);margin-left:6px;vertical-align:middle}
+.tag.late{background:transparent;color:var(--warn);border:1px solid var(--warn)}
+.t{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-top:1px solid var(--line)}
+.t:first-of-type{border-top:0}
+.t input{width:20px;height:20px;margin-top:2px;accent-color:var(--acc);flex:none}
+.t.c span{text-decoration:line-through;color:var(--mute)}
+.t button{margin-left:auto;border:0;background:none;color:var(--mute);cursor:pointer;font-size:18px;line-height:1}
+.add{display:flex;gap:6px;margin-top:8px}
+.add input{flex:1;min-width:0}
+.add button,.reset{font:inherit;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.reset{margin-top:14px;color:var(--warn)}
+.t{padding:10px 0}.t input{width:24px;height:24px}.t button{padding:4px 8px;font-size:22px}
+.tb{font:inherit;font-size:14px;padding:8px 16px;border-radius:8px;border:0;background:var(--acc);color:#fff;cursor:pointer}
+.tm{font-variant-numeric:tabular-nums}.tm.end{color:var(--warn)}
+.bk{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.bk .reset{margin-top:0}
+.empty{text-align:center;color:var(--mute);padding:30px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>CSCA Math Tracker</h1>
+<div class="sub">14-day plan · tick tasks as you finish them</div>
+<div class="top">
+  <div class="row"><div class="stat"><b id="pct">0%</b> done · <b id="cnt">0/0</b> tasks · day <b id="dn">1</b> of 14</div>
+  <label class="d">Start <input type="date" id="start"></label></div>
+  <div class="bar"><i id="fill"></i></div>
+  <div class="row" style="margin-top:10px"><div class="stat">Drill timer <b class="tm" id="tm">12:00</b></div><div><button class="tb" id="ts">Start</button></div></div>
+</div>
+<div class="tabs" id="tabs"></div>
+<div id="list"></div>
+<div class="bk"><button class="reset" id="exp">Export backup</button><button class="reset" id="imp">Import backup</button><button class="reset" id="reset">Reset all</button></div>
+</div>
+<script>
+var PLAN=[
+{t:"Sets & intervals",k:["Learn set notation: ∈ ⊆ ∪ ∩ ∅, complement","Read open/closed intervals: (a,b), [a,b], mixed","Practice: subset statements, find A∩B with intervals","Count elements in sets (Venn diagram)"]},
+{t:"Inequalities",k:["Inequality rules (flip sign when × or ÷ by a negative)","Solve quadratic inequalities, e.g. x²−5x+4<0","Solve rational inequalities, e.g. (x−1)/(x−2) ≤ 1","Compare powers: base >1, 0–1, negative"]},
+{t:"Review: sets & inequalities",k:["Redo mistakes from Days 1–2","Do 10 mixed set/inequality questions","Write the key rules on one page"]},
+{t:"Functions I: domain, range, parity",k:["Domain rules: denominator, square root, log","Domain vs range practice","Odd/even test: f(−x) vs f(x)","Practice: domain of y = 1/√(x+1)"]},
+{t:"Functions II: elementary functions",k:["Increasing/decreasing: lines, powers, exp, log","Exp/log laws; base >1 vs 0<b<1","Natural log ln, common log, change of base formula","Inverse functions: swap x,y and solve","Basic trig: sin, cos, tan graphs, domains, unit circle"]},
+{t:"Sequences",k:["Arithmetic: aₙ = a₁+(n−1)d and Sₙ","Geometric: aₙ = a₁rⁿ⁻¹ and Sₙ (r≠1)","Find aₙ from Sₙ: aₙ = Sₙ−Sₙ₋₁","Practice: find a₁₀₀ from a₁ and d"]},
+{t:"Calculus basics",k:["Limits, e.g. lim sin(x)/x as x→0","Limit definition of derivative: f′(x)=lim[f(x+h)−f(x)]/h","Derivative rules; derivative = slope of tangent","Max/min: critical points + interval endpoints","Basic definite integral, e.g. ∫₀¹ x dx"]},
+{t:"Review: functions, sequences, calculus",k:["Redo mistakes from Days 4–7","Do 15 mixed function/sequence/calculus questions","Revise formulas sheet"]},
+{t:"Geometry I: lines & circles",k:["Slope, point-slope, slope-intercept forms","Parallel/perpendicular slopes, intersections","Distance and midpoint","Circle equation; complete the square for centre/radius"]},
+{t:"Geometry II: conics",k:["Ellipse: c² = a²−b², foci, vertices, eccentricity","Hyperbola: c² = a²+b², foci, asymptotes","Parabola: y²=4px, x²=4py, focus and directrix","Practice: identify focus/directrix"]},
+{t:"Vectors & complex numbers",k:["Vectors: add, scale, magnitude, dot product","Perpendicular vectors via dot product","Complex numbers: i²=−1, conjugates, modulus, division","Powers of i; solve a simple complex equation"]},
+{t:"Solid geometry",k:["3D coordinates: distance and midpoint","Volume & surface area: cube, cuboid, cylinder, cone, sphere","Prisms and pyramids basics","Redo mistakes from Days 9–11"]},
+{t:"Probability & statistics",k:["Classical probability; with/without replacement","Factorial, permutations P(n,r), combinations C(n,r)","Conditional probability, addition/multiplication rules, independence","Mean, variance, standard deviation (frequency tables)","Normal distribution: bell shape, symmetry, 68–95–99.7"]},
+{t:"Full mock & weak spots",k:["Take an official mock: 48 questions, 60 minutes","Mark it and list weak topics","Redo weak-topic questions","Review glossary flashcards on Quizlet"]}
+];
+PLAN.forEach(function(p){p.k.push("⏱ Timed drill: 10 questions in 12 minutes")});
+var KEY="csca-math-v1",S={done:{},custom:{},start:"",filter:"all"};
+try{var raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw))}catch(e){}
+function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+if(!S.start)S.start=iso(new Date());
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function esc(s){return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function dayIndexToday(){var a=new Date(S.start+"T00:00:00"),b=new Date();b.setHours(0,0,0,0);return Math.round((b-a)/864e5)}
+function tasksOf(i){var a=PLAN[i].k.map(function(x,j){return{id:"d"+i+"t"+j,text:x,custom:false}});return a.concat((S.custom[i]||[]).map(function(c){return{id:c.id,text:c.text,custom:true}}))}
+function render(){
+  var today=dayIndexToday(),total=0,done=0,html="";
+  PLAN.forEach(function(p,i){
+    var ts=tasksOf(i),dn=ts.filter(function(t){return S.done[t.id]}).length;
+    total+=ts.length;done+=dn;
+    var complete=dn===ts.length&&ts.length>0;
+    if(S.filter==="today"&&i!==today)return;
+    if(S.filter==="left"&&complete)return;
+    var d=new Date(S.start+"T00:00:00");d.setDate(d.getDate()+i);
+    var tag=i===today?'<span class="tag">Today</span>':(i<today&&!complete?'<span class="tag late">Behind</span>':"");
+    html+='<div class="day'+(i===today?" today":"")+(complete?" done":"")+'"><div class="dh"><h2>Day '+(i+1)+" · "+esc(p.t)+tag+'</h2><span>'+d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})+" · "+dn+"/"+ts.length+"</span></div>";
+    ts.forEach(function(t){html+='<label class="t'+(S.done[t.id]?" c":"")+'"><input type="checkbox" data-id="'+t.id+'"'+(S.done[t.id]?" checked":"")+"><span>"+esc(t.text)+"</span>"+(t.custom?'<button data-del="'+t.id+'" data-day="'+i+'" title="Delete">×</button>':"")+"</label>"});
+    html+='<div class="add"><input type="text" placeholder="Add your own task…" data-add="'+i+'"><button data-addbtn="'+i+'">Add</button></div></div>';
+  });
+  document.getElementById("list").innerHTML=html||'<div class="empty">Nothing here. '+(S.filter==="today"?"No plan for today (outside the 14 days).":"All done! 🎉")+"</div>";
+  var pct=total?Math.round(done/total*100):0;
+  document.getElementById("pct").textContent=pct+"%";
+  document.getElementById("cnt").textContent=done+"/"+total;
+  document.getElementById("dn").textContent=Math.min(Math.max(today+1,1),14);
+  document.getElementById("fill").style.width=pct+"%";
+  document.getElementById("start").value=S.start;
+  document.querySelectorAll("#tabs button").forEach(function(b){b.classList.toggle("on",b.dataset.f===S.filter)});
+}
+document.getElementById("tabs").innerHTML=[["all","All days"],["today","Today"],["left","Remaining"]].map(function(x){return'<button data-f="'+x[0]+'">'+x[1]+"</button>"}).join("");
+document.getElementById("tabs").onclick=function(e){if(e.target.dataset.f){S.filter=e.target.dataset.f;save();render()}};
+document.getElementById("start").onchange=function(e){if(e.target.value){S.start=e.target.value;save();render()}};
+document.getElementById("reset").onclick=function(){if(confirm("Reset all progress and custom tasks?")){S={done:{},custom:{},start:S.start,filter:"all"};save();render()}};
+function addTask(i){var inp=document.querySelector('[data-add="'+i+'"]'),v=inp.value.trim();if(!v)return;(S.custom[i]=S.custom[i]||[]).push({id:"c"+Date.now(),text:v});save();render()}
+var L=document.getElementById("list");
+L.addEventListener("change",function(e){var id=e.target.dataset.id;if(id){if(e.target.checked)S.done[id]=1;else delete S.done[id];save();render()}});
+L.addEventListener("click",function(e){var t=e.target;
+  if(t.dataset.addbtn!==undefined)addTask(t.dataset.addbtn);
+  if(t.dataset.del){e.preventDefault();var i=t.dataset.day;S.custom[i]=(S.custom[i]||[]).filter(function(c){return c.id!==t.dataset.del});delete S.done[t.dataset.del];save();render()}});
+L.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.dataset.add!==undefined)addTask(e.target.dataset.add)});
+var tL=720,tI=null,tb=document.getElementById("ts"),tm=document.getElementById("tm");
+function tShow(){tm.textContent=String(Math.floor(tL/60)).padStart(2,"0")+":"+String(tL%60).padStart(2,"0");tm.classList.toggle("end",tL===0)}
+tb.onclick=function(){if(tI){clearInterval(tI);tI=null;tL=720;tb.textContent="Start";tShow();return}
+  tL=720;tb.textContent="Stop";tShow();
+  tI=setInterval(function(){tL--;tShow();if(tL<=0){clearInterval(tI);tI=null;tb.textContent="Start";try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}}},1000)};
+document.getElementById("exp").onclick=function(){var j=JSON.stringify(S);
+  try{var a=document.createElement("a");a.href="data:application/json;charset=utf-8,"+encodeURIComponent(j);a.download="csca-backup.json";a.click()}catch(e){}
+  try{navigator.clipboard&&navigator.clipboard.writeText(j)}catch(e){}alert("Backup downloaded and copied to clipboard.")};
+document.getElementById("imp").onclick=function(){var v=prompt("Paste your backup text:");if(!v)return;try{S=Object.assign({done:{},custom:{},start:S.start,filter:"all"},JSON.parse(v));save();render()}catch(e){alert("That backup isn’t valid.")}};
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}
+render();
+</script>
+</body>
+</html>
